@@ -77,3 +77,52 @@ docker cp xnvme-test:/tmp/results/zoned/report.html ./zoned_report.html
 docker rm --force xnvme-test
 docker network rm xnvme_test_net
 ```
+
+### 추가 내용
+
+#### Qemu의 접속
+
+ZNS 디스크를 사용하기 위해서는 도커 프로세스에서 구동 중인
+Qemu에 들어가야 합니다.
+
+따라서, 다음의 명령을 통해 접속을 진행하도록 합니다.
+
+```bash
+# 안되는 경우에는 반드시 export를 다시 해주십시오.
+# export TARGET_ENV=/usr/local/share/cijoe/envs/refenv-xnvme-qemu.sh
+ssh $QEMU_HOST -p $QEMU_GUEST_SSH_FWD_PORT
+```
+
+#### 자원 할당 내용의 변경
+
+Qemu의 하드웨어 리소스 할당 내역을 변경하고 싶은 경우에는
+`/usr/local/share/cijoe/envs/refenv-xnvme-qemu.sh`의 내용을 확인하고
+변경하고자 하는 값에 해당하는 환경 변수 값을 수정해줍니다.
+
+그리고 Qemu의 크기가 너무 작아서 작업을 할 수 없는 경우에는
+`/opt/guests/emujoe/`로 이동하여 아래의 명령을 수행해주도록 합니다.
+
+```bash
+qemu-img resize boot.img +<변경하고자 하는 크기>G
+```
+
+#### 재실행을 하고 싶은 경우
+
+Qemu를 재실행을 하고 싶은 경우에는 아래 절차를 따라야 합니다.
+
+```bash
+# 삭제 과정
+source /opt/scripts/suitup.sh
+qemu::kill
+
+# 환경 변수의 설정
+export TARGET_ENV=/usr/local/share/cijoe/envs/refenv-xnvme-qemu.sh
+
+# 실행 과정
+source /opt/scripts/suitup.sh
+source "${CIJ_TESTFILES}/qemu_setup_nvme_1c2ns_nvm_zns.sh"
+qemu_setup_pcie
+QEMU_ARGS_EXTRA="$QEMU_SETUP_PCIE"
+qemu::run
+```
+
